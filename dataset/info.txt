@@ -1,0 +1,5 @@
+Images were chosen manually from 4 folders (WZ-II-386 to WZ-II-389). Only images that contained a single symbol and are traced were chosen, and only if there were at least 3 copies of this watermark. If images were somewhat deteriorated (e.g. some missing lines or only light tracing) they were included, but very deteriorated images were not (e.g. the majority of the watermark was missing). The images were binarized using the harmonization for traced images with light noise from the Software Project. After this, the images were edited manually to add large parts that were missed by the algorithm and to remove parts that were included by mistake. Finally, all images had their borders cropped, and were resized and padded to make them exactly 512x512 pixels.
+
+Training/evaluation is split 80/20.
+
+Every original folder has a corresponding folder in the dataset, with the same name. The images in the dataset are named with the following pattern: {group_index}_{number}.png where {group_index} is the index of the group of images that contain the same watermark, and {number} is the index of the image in that group starting at 1.
