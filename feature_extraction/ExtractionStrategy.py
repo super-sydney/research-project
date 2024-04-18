@@ -4,6 +4,8 @@ extract features from images.
 """
 from abc import (ABC, abstractmethod)
 
+from numpy import ndarray
+
 
 class ExtractionStrategy(ABC):
     """
@@ -11,7 +13,7 @@ class ExtractionStrategy(ABC):
     """
 
     @abstractmethod
-    def run(self, image: [[bool]]):
+    def run(self, image: ndarray) -> ndarray:
         pass
 
     def __str__(self):

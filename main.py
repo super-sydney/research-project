@@ -4,13 +4,17 @@ from evaluation import Evaluation
 from feature_extraction import *
 from similarity import *
 
-logging.basicConfig(level=logging.INFO, )
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    logging.info("Starting the evaluation")
+    logger.info("Starting the evaluation")
     m = ZernikeMoments()
     c = Euclidean()
 
-    e = Evaluation(m, c, "dataset/harmonized_training")
+    e = Evaluation(m, c, "dataset/training_subset1")
     score = e.evaluate()
-    logging.info(f'Ran model {m} with comparison {c} and got score {score}')
+    best_possible_score = e.best_possible_score()
+
+    logging.debug(f"Score: {score}, Best possible score: {best_possible_score}")
+    logging.info(f'Ran feature extraction {m} with comparison {c} and got score {score / best_possible_score}')
