@@ -5,6 +5,7 @@ by comparing the features of the images with each other.
 """
 import logging
 import os
+import pickle as pkl
 
 import cv2
 
@@ -22,7 +23,8 @@ def scoring_function(x):
 
     :param x: the position in the ranking, rescaled to be between 0 and 1
     """
-    return 2 - (2 / (1 + 2.71828 ** (-10 * x)))
+    # return 2 - (2 / (1 + 2.71828 ** (-10 * x)))
+    return 1 if x < 0.1 else 0
 
 
 class Evaluation:
@@ -56,12 +58,27 @@ class Evaluation:
         :return: the score of the model with the comparison method
         """
         # load all images
-        logger.info(f"Loading and extracting features from {self.images_path}")
-        images = [
-            (image,
-             self.extraction_strategy.run(cv2.imread(os.path.join(self.images_path, image), cv2.IMREAD_GRAYSCALE)))
-            for image in self.images]
-        images.sort(key=lambda x: x[0])
+        db_name = os.path.join("database",
+                               self.extraction_strategy.__str__() + "." + os.path.split(self.images_path)[-1] + ".pkl")
+        if os.path.exists(db_name):
+            logger.info(f"Loading features from {db_name}")
+            images = pkl.load(open(db_name, "rb"))
+        else:
+            logger.info(f"Loading and extracting features from {self.images_path}")
+            images = []
+            for i, image in enumerate(self.images):
+                logger.info(f"Loading and extracting features from {image} ({i + 1}/{len(self.images)})")
+                image_path = os.path.join(self.images_path, image)
+                img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+                if img is None:
+                    logger.warning(f"Could not load image {image_path}")
+                    continue
+                images.append((image, self.extraction_strategy.run(img)))
+
+            images.sort(key=lambda x: x[0])
+            pkl.dump(images, open(db_name, "wb"))
+            logger.info(f"Saved features to {db_name}")
+
         logger.info(f"Loaded and extracted features of {len(images)} images")
 
         score = 0
