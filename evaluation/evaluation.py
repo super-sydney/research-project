@@ -8,6 +8,7 @@ import os
 import pickle as pkl
 
 import cv2
+import numpy as np
 
 from feature_extraction import *
 from similarity import Similarity
@@ -39,11 +40,11 @@ class Evaluation:
         self.images_path = images_path
         self.similarity = similarity
 
-        # get all images from the folder that have a .jpg, .jpeg or .png extension
+        # get all images from the folder that have a .jpg, .jpeg extension
         self.images = [f for f in os.listdir(images_path) if
                        f.endswith(".jpg") or f.endswith(".jpeg")]
 
-    def evaluate(self) -> float:
+    def evaluate(self, needs_training=False, save_db=False) -> float:
         """
         Evaluate the model by comparing the features of the images with each other.
 
@@ -55,6 +56,9 @@ class Evaluation:
         the first number is the index of the group of watermarks it's
         a part of, the second number is the index within that group.
 
+        :param needs_training: whether the model needs to be trained. This will give all images at once to the model, instead of one by one.
+        :param save_db: whether to save the database of features to a file
+
         :return: the score of the model with the comparison method
         """
         # load all images
@@ -65,19 +69,31 @@ class Evaluation:
             images = pkl.load(open(db_name, "rb"))
         else:
             logger.info(f"Loading and extracting features from {self.images_path}")
-            images = []
-            for i, image in enumerate(self.images):
-                logger.info(f"Loading and extracting features from {image} ({i + 1}/{len(self.images)})")
-                image_path = os.path.join(self.images_path, image)
-                img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                if img is None:
-                    logger.warning(f"Could not load image {image_path}")
-                    continue
-                images.append((image, self.extraction_strategy.run(img)))
 
-            images.sort(key=lambda x: x[0])
-            pkl.dump(images, open(db_name, "wb"))
-            logger.info(f"Saved features to {db_name}")
+            images = []
+            if needs_training:
+                # load all images at once
+                paths, images = zip(
+                    *[(image, cv2.imread(os.path.join(self.images_path, image), cv2.IMREAD_GRAYSCALE))
+                      for image in
+                      self.images])
+                images = np.array(images)
+                features = self.extraction_strategy.run(images)
+                images = [(paths[i], features[i]) for i in range(len(images))]
+            else:
+                for i, image in enumerate(self.images):
+                    logger.info(f"Loading and extracting features from {image} ({i + 1}/{len(self.images)})")
+                    image_path = os.path.join(self.images_path, image)
+                    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+                    if img is None:
+                        logger.warning(f"Could not load image {image_path}")
+                        continue
+                    images.append((image, self.extraction_strategy.run(img)))
+
+            if save_db:
+                images.sort(key=lambda x: x[0])
+                pkl.dump(images, open(db_name, "wb"))
+                logger.info(f"Saved features to {db_name}")
 
         logger.info(f"Loaded and extracted features of {len(images)} images")
 
