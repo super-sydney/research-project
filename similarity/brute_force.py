@@ -11,4 +11,4 @@ class BruteForce(Similarity):
     def compare(self, d1, d2):
         bf = cv2.BFMatcher()
         matches = bf.knnMatch(d1, d2, k=2)
-        return len(matches)
+        return 1 / len(matches)
