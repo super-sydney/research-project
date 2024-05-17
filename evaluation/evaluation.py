@@ -6,6 +6,7 @@ by comparing the features of the images with each other.
 import logging
 import os
 import pickle as pkl
+import time
 
 import cv2
 import numpy as np
@@ -44,7 +45,7 @@ class Evaluation:
         self.images = [f for f in os.listdir(images_path) if
                        f.endswith(".jpg") or f.endswith(".jpeg")]
 
-    def evaluate(self, needs_training=False, save_db=False) -> float:
+    def evaluate(self, visualize=False, save_db=False) -> float:
         """
         Evaluate the model by comparing the features of the images with each other.
 
@@ -71,31 +72,66 @@ class Evaluation:
             logger.info(f"Loading and extracting features from {self.images_path}")
 
             images = []
-            if needs_training:
-                # load all images at once
-                paths, images = zip(
-                    *[(image, cv2.imread(os.path.join(self.images_path, image), cv2.IMREAD_GRAYSCALE))
-                      for image in
-                      self.images])
-                images = np.array(images)
-                features = self.extraction_strategy.run(images)
-                images = [(paths[i], features[i]) for i in range(len(images))]
-            else:
-                for i, image in enumerate(self.images):
-                    logger.info(f"Loading and extracting features from {image} ({i + 1}/{len(self.images)})")
-                    image_path = os.path.join(self.images_path, image)
-                    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                    if img is None:
-                        logger.warning(f"Could not load image {image_path}")
-                        continue
-                    images.append((image, self.extraction_strategy.run(img)))
+            t = time.time_ns()
+
+            for i, image in enumerate(self.images):
+                logger.info(f"Loading and extracting features from {image} ({i + 1}/{len(self.images)})")
+                image_path = os.path.join(self.images_path, image)
+                img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+                if img is None:
+                    logger.warning(f"Could not load image {image_path}")
+                    continue
+                images.append((image, self.extraction_strategy.run(img)))
+
+            logger.info(
+                f"Extracting features took {(time.time_ns() - t) / 1e6:.2f} ms (avg: {(time.time_ns() - t) / 1e6 / len(images):.2f} ms/image)")
+
+            images.sort(key=lambda x: x[0])
 
             if save_db:
-                images.sort(key=lambda x: x[0])
                 pkl.dump(images, open(db_name, "wb"))
                 logger.info(f"Saved features to {db_name}")
 
         logger.info(f"Loaded and extracted features of {len(images)} images")
+
+        if visualize:
+            # Using locally linear embedding to reduce the dimensionality of the features to just 2d
+            from sklearn.manifold import LocallyLinearEmbedding
+            lle = LocallyLinearEmbedding(n_components=2)
+            features = np.array([f for _, f in images])
+            new_features = lle.fit_transform(features)
+            new_images = images[:18]
+
+            import matplotlib.pyplot as plt
+
+            # Extract group indices from filenames
+            group_indices = np.array([filename.split("_")[0] for filename, _ in new_images], dtype=int)
+
+            # Create a colormap
+            cmap = plt.cm.get_cmap('gnuplot')
+
+            # Plot each point with the corresponding color
+            fig, ax = plt.subplots()
+            for i, (filename, _) in enumerate(new_images):
+                ax.scatter(new_features[i, 0], new_features[i, 1], color=cmap(group_indices[i] / np.max(group_indices)))
+                ax.annotate(filename[:-4], (new_features[i, 0], new_features[i, 1]))
+            fig.savefig(self.extraction_strategy.__str__() + ".png", bbox_inches='tight')
+
+            # Plot a table of the first 9 images and up to 5 features
+            num_features = np.min([5, len(features)])
+            fig, ax = plt.subplots(9, num_features + 1)
+
+            for i, (filename, features) in enumerate(images[:9]):
+                ax[i, 0].imshow(cv2.imread(os.path.join(self.images_path, filename)))
+                ax[i, 0].axis('off')
+
+                for j in range(num_features):
+                    ax[i, j + 1].text(0.5, 0.5, f"{features[j]:.2f}", ha='center', va='center')
+                    ax[i, j + 1].axis('off')
+
+            plt.tight_layout()
+            plt.savefig(self.extraction_strategy.__str__() + "_features.png")
+            plt.show()
 
         score = 0
         for i, (filename, features) in enumerate(images):
