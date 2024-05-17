@@ -240,3 +240,5 @@ fabric.properties
 .idea/
 
 *.pkl
+
+*.png
