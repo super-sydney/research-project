@@ -1,4 +1,5 @@
 from .ExtractionStrategy import ExtractionStrategy
+from .chebychev import Chebyshev
 from .gabor import Gabor
 from .generic_fourier_descriptor import GenericFourierDescriptor
 from .hu_moments import HuMoments
@@ -9,4 +10,4 @@ from .sift import SIFT
 from .zernike_moments import ZernikeMoments
 
 __all__ = ['ExtractionStrategy', 'SIFT', 'ZernikeMoments', 'LLE', 'GenericFourierDescriptor', 'HuMoments', 'ORB',
-           'Gabor', 'LBPHistogram']
+           'Gabor', 'LBPHistogram', 'Chebyshev']

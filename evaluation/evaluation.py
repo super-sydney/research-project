@@ -81,7 +81,9 @@ class Evaluation:
                 if img is None:
                     logger.warning(f"Could not load image {image_path}")
                     continue
+                t1 = time.time_ns()
                 images.append((image, self.extraction_strategy.run(img)))
+                logger.debug(f"Extracted features from {image} in {(time.time_ns() - t1) / 1e6:.2f} ms")
 
             logger.info(
                 f"Extracting features took {(time.time_ns() - t) / 1e6:.2f} ms (avg: {(time.time_ns() - t) / 1e6 / len(images):.2f} ms/image)")

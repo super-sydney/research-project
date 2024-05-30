@@ -4,16 +4,16 @@ from evaluation import Evaluation
 from feature_extraction import *
 from similarity import *
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     logger.info("Starting the evaluation")
-    m = GenericFourierDescriptor()
+    m = Chebyshev()
     c = Euclidean()
 
-    e = Evaluation(m, c, "dataset/training_subset1")
-    score = e.evaluate(visualize=False, save_db=True)
+    e = Evaluation(m, c, "dataset/training_subset1/mini")
+    score = e.evaluate(visualize=False, save_db=False)
     best_possible_score = e.best_possible_score()
 
     logging.debug(f"Score: {score}, Best possible score: {best_possible_score}")
