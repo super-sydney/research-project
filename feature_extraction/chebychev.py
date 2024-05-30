@@ -32,14 +32,12 @@ class Chebyshev(ExtractionStrategy):
         :param q: The q-th moment
         :return: The Chebyshev moment
         """
-
         rows, cols = image.shape
-        x, y = np.meshgrid(range(rows), range(cols), indexing='ij')
-        # x = list(range(rows))
-        # y = list(range(cols))
+        x = np.array(range(rows))
+        y = np.array(range(cols))
 
-        T_p = self.chebyshev_polynomial(p, x, rows)
-        T_q = self.chebyshev_polynomial(q, y, cols)
+        T_p = np.array(cols * [self.chebyshev_polynomial(p, x, rows)]).T
+        T_q = np.array(rows * [self.chebyshev_polynomial(q, y, cols)])
 
         return np.sum(image * T_p * T_q)
 
