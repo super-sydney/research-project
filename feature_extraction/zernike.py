@@ -4,7 +4,7 @@ from numpy import ndarray
 from feature_extraction.ExtractionStrategy import ExtractionStrategy
 
 
-class ZernikeMoments(ExtractionStrategy):
+class Zernike(ExtractionStrategy):
     """
     Zernike Moments model
     """
@@ -15,7 +15,7 @@ class ZernikeMoments(ExtractionStrategy):
         :param image: The image to run the model on
         :return: The features extracted from the image
         """
-        return mh.features.zernike_moments(image, radius=256, degree=8)
+        return mh.features.zernike_moments(image, radius=256, degree=24)
 
     def __str__(self):
-        return "Zernike Moments"
+        return "Zernike"
