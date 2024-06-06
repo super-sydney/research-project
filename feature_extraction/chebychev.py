@@ -16,13 +16,15 @@ class Chebyshev(ExtractionStrategy):
         :return: The features extracted from the image
         """
 
-        moments = np.array([])
+        moments = []
+        maxorder = 24
 
-        for p in range(1, 8):
-            for q in range(1, 8):
-                moments = np.append(moments, self.chebyshev_moment(image, p, q))
+        for p in range(1, maxorder):
+            for q in range(1, maxorder):
+                if p + q <= maxorder:
+                    moments.append(self.chebyshev_moment(image, p, q))
 
-        return moments
+        return np.array(moments)
 
     def chebyshev_moment(self, image: ndarray, p: int, q: int) -> float:
         """
@@ -61,7 +63,7 @@ class Chebyshev(ExtractionStrategy):
             return t_n
 
     def __str__(self):
-        return "Chebyshev"
+        return "Tchebichef"
 
 
 if __name__ == "__main__":
