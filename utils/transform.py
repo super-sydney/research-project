@@ -16,8 +16,49 @@ def rotate_random(image):
                           , (image.shape[1], image.shape[0]))
 
 
-def scale_and_translate(image, scale, tx, ty):
-    return cv2.warpAffine(image, np.float32([[scale, 0, tx], [0, scale, ty]]), (image.shape[1], image.shape[0]))
+def shear(image):
+    # pad 2d image on all sides by half of the image size
+    w = image.shape[1] // 2
+    h = image.shape[0] // 2
+    image = cv2.copyMakeBorder(image, h, h, w, w, cv2.BORDER_CONSTANT, value=0)
+
+    # Randomly shear the image by at most 15 degrees
+    shear_factor_x = np.tan(np.random.uniform(0, 15) * np.pi / 180)
+    shear_factor_y = np.tan(np.random.uniform(0, 15) * np.pi / 180)
+    shear_matrix = np.array([
+        [1 + shear_factor_x * shear_factor_y, shear_factor_x, 0],
+        [shear_factor_y, 1, 0]
+    ])
+
+    img = cv2.warpAffine(image, shear_matrix, (image.shape[1], image.shape[0]))
+
+    # Crop the image
+    y_nonzero, x_nonzero = np.nonzero(img)
+    x_min, x_max = np.min(x_nonzero), np.max(x_nonzero)
+    y_min, y_max = np.min(y_nonzero), np.max(y_nonzero)
+
+    img = img[y_min:y_max, x_min:x_max]
+
+    # Scale the largest side to be 512 pixels
+    scale = 512 / max(img.shape)
+    img = cv2.resize(img, (0, 0), fx=scale, fy=scale)
+
+    # Binarize the image
+    img[np.where(img > 127)] = 255
+    img[np.where(img <= 127)] = 0
+
+    # Pad the image to be 512x512
+    pad_x: int = 512 - img.shape[1]
+    pad_y: int = 512 - img.shape[0]
+    value: float = 0
+    img = cv2.copyMakeBorder(img,
+                             pad_y // 2,
+                             pad_y - (pad_y // 2),
+                             pad_x // 2,
+                             pad_x - (pad_x // 2),
+                             cv2.BORDER_CONSTANT, value)
+
+    return img
 
 
 if __name__ == '__main__':
@@ -30,7 +71,7 @@ if __name__ == '__main__':
     # parser.add_argument('input_folder', type=str, help='Folder containing the original dataset')
     #
     # args = parser.parse_args()
-    input_folder = "training_subset1"
+    input_folder = "eval_subset"
 
     images = [f for f in os.listdir(os.path.join(os.getcwd(), input_folder)) if
               f.endswith(".png") or f.endswith(".jpg")]
@@ -38,21 +79,14 @@ if __name__ == '__main__':
     for image in images:
         logger.info(f"Transforming {image}")
         image_path = os.path.join(input_folder, image)
-        img = cv2.imread(image_path)
+        img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
         # Rotate the image by a random amount
         rotated = rotate_random(img)
         cv2.imwrite(os.path.join(input_folder, "rotated", image), rotated)
 
-        # Scale the image down by a random amount and translate it so it stays within the frame
-        scale = np.random.uniform(0.25, 0.75)
-        # original size is 512x512, new is scale*512xscale*512.
-        # The most it can be translated in x and y is 512 - scale*512
-        tx = np.random.randint(0, 512 - scale * 512)
-        ty = np.random.randint(0, 512 - scale * 512)
+        scaled = shear(img)
+        cv2.imwrite(os.path.join(input_folder, "sheared", image), scaled)
 
-        scaled = scale_and_translate(img, scale, tx, ty)
-        cv2.imwrite(os.path.join(input_folder, "scaled_translated", image), scaled)
-
-        both = scale_and_translate(rotated, scale, tx, ty)
-        cv2.imwrite(os.path.join(input_folder, "rotated_scaled_translated", image), both)
+        both = shear(rotated)
+        cv2.imwrite(os.path.join(input_folder, "both", image), both)
