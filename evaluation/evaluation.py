@@ -10,6 +10,7 @@ import time
 
 import cv2
 import numpy as np
+import pandas as pd
 
 from feature_extraction import *
 from similarity import Similarity
@@ -45,24 +46,7 @@ class Evaluation:
         self.images = [f for f in os.listdir(images_path) if
                        f.endswith(".jpg") or f.endswith(".jpeg")]
 
-    def evaluate(self, visualize=False, save_db=False) -> float:
-        """
-        Evaluate the model by comparing the features of the images with each other.
-
-        For every image, the features are computed using the model and the comparison
-        method is used to make a similarity ranking. The score is calculated based
-        on where in this ranking the images from the same group are.
-
-        file names are in the format "{group_index}_{image_index}.jpg"
-        the first number is the index of the group of watermarks it's
-        a part of, the second number is the index within that group.
-
-        :param needs_training: whether the model needs to be trained. This will give all images at once to the model, instead of one by one.
-        :param save_db: whether to save the database of features to a file
-
-        :return: the score of the model with the comparison method
-        """
-        # load all images
+    def load_features(self, save_db=False):
         db_name = os.path.join("database",
                                self.extraction_strategy.__str__() + "." + os.path.split(self.images_path)[-1] + ".pkl")
         if os.path.exists(db_name):
@@ -95,6 +79,65 @@ class Evaluation:
                 logger.info(f"Saved features to {db_name}")
 
         logger.info(f"Loaded and extracted features of {len(images)} images")
+
+        return images
+
+    def evaluate_ranking(self, similarities, group_index, percentage) -> tuple[float, float]:
+        """
+        Evaluate the ranking of the images from the same group in the similarity ranking.
+
+        The ranking is evaluated by checking how many images from the same group are in the top
+        percentage of the ranking. The precision and recall are calculated based on this.
+
+        :param similarities: the similarities of the images with the input image
+        :param group_index: the index of the group of images
+        :param percentage: the percentage of the ranking to consider
+
+        :return: the precision and recall of the group in the ranking
+        """
+        # count how many images are in the same group
+        group_count = 0
+        for filename, _ in similarities:
+            if filename.split("_")[0] == group_index:
+                group_count += 1
+
+        # calculate the number of images to consider
+        num_images = int(percentage * len(similarities))
+        if num_images == 0:
+            return 0, 0
+
+        # count how many images from the same group are in the top percentage of the ranking
+        group_in_top = 0
+        for i in range(num_images):
+            filename, _ = similarities[i]
+            if filename.split("_")[0] == group_index:
+                group_in_top += 1
+
+        # calculate precision and recall
+        precision = group_in_top / num_images
+        recall = group_in_top / group_count
+
+        return precision, recall
+
+    def evaluate(self, visualize=False, save_db=False) -> float:
+        """
+        Evaluate the model by comparing the features of the images with each other.
+
+        For every image, the features are computed using the model and the comparison
+        method is used to make a similarity ranking. The score is calculated based
+        on where in this ranking the images from the same group are.
+
+        file names are in the format "{group_index}_{image_index}.jpg"
+        the first number is the index of the group of watermarks it's
+        a part of, the second number is the index within that group.
+
+        :param needs_training: whether the model needs to be trained. This will give all images at once to the model, instead of one by one.
+        :param save_db: whether to save the database of features to a file
+
+        :return: the score of the model with the comparison method
+        """
+        # load all images
+        images = self.load_features(save_db)
 
         if visualize:
             # Using locally linear embedding to reduce the dimensionality of the features to just 2d
@@ -135,29 +178,38 @@ class Evaluation:
             plt.savefig(self.extraction_strategy.__str__() + "_features.png")
             plt.show()
 
+        # Collect precision and recall of each group, depending on percentage considered retrieved
+        results = []
         score = 0
         for i, (filename, features) in enumerate(images):
             logger.info(f"Comparing features of {filename} ({i + 1}/{len(images)})")
             # compare features with every other image
-            similarities = []
-            for other_filename, other_features in images:
-                if filename is other_filename:
-                    continue
-                similarity = self.similarity.compare(features, other_features)
-                similarities.append((other_filename, similarity))
+            similarities = [
+                (other_filename, self.similarity.compare(features, other_features))
+                for other_filename, other_features in images
+                if filename != other_filename
+            ]
 
             # sort similarities
             similarities.sort(key=lambda x: x[1], reverse=True)
 
             logger.debug(f"Got similarities for {filename}: {similarities}")
 
-            group_index = filename.split("_")[0]
+            group_index, image_index = filename.split("_")
+
             for i, (filename, _) in enumerate(similarities):
                 # if the image is from the same group, add the score
                 if filename.split("_")[0] == group_index:
                     score += scoring_function(i / len(similarities))
 
-        return score
+            for i in np.arange(0.01, 1.01, 0.01):
+                precision, recall = self.evaluate_ranking(similarities, group_index, i)
+                results.append(
+                    {"group": group_index, "image": image_index, "percentage": i, "precision": precision,
+                     "recall": recall,
+                     "f1": 2 * precision * recall / (precision + recall) if precision + recall != 0 else 0})
+
+        return score, pd.DataFrame(results)
 
     def best_possible_score(self) -> float:
         """
