@@ -17,7 +17,7 @@ class GenericFourierDescriptor(ExtractionStrategy):
         :return: The features extracted from the image
         """
 
-        X = gfd(image.astype(bool), 3, 6)
+        X = gfd(image.clip(0, 1), 3, 6)
 
         return np.abs(X).flatten()
 
