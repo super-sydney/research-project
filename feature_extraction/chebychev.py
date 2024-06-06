@@ -17,7 +17,7 @@ class Chebyshev(ExtractionStrategy):
         """
 
         moments = []
-        maxorder = 24
+        maxorder = 12
 
         for p in range(1, maxorder):
             for q in range(1, maxorder):

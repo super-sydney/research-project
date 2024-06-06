@@ -15,7 +15,7 @@ class Zernike(ExtractionStrategy):
         :param image: The image to run the model on
         :return: The features extracted from the image
         """
-        return mh.features.zernike_moments(image, radius=256, degree=24)
+        return mh.features.zernike_moments(image, radius=256, degree=10)
 
     def __str__(self):
         return "Zernike"

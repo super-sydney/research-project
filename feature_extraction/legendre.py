@@ -17,7 +17,7 @@ class Legendre(ExtractionStrategy):
         """
 
         moments = []
-        maxorder = 24
+        maxorder = 8
 
         for p in range(1, maxorder):
             for q in range(1, maxorder):
