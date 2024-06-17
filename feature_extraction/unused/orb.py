@@ -6,13 +6,13 @@ from feature_extraction.ExtractionStrategy import ExtractionStrategy
 
 class ORB(ExtractionStrategy):
     """
-    SIFT model
+    ORB
     """
 
     def run(self, image: ndarray) -> ndarray:
         """
-        Run the ORB model on the image
-        :param image: The image to run the model on
+        Generate the ORB features of the image.
+        :param image: The image to extract the features from
         :return: The features extracted from the image
         """
 
@@ -22,4 +22,4 @@ class ORB(ExtractionStrategy):
         return des
 
     def __str__(self):
-        return "SIFT"
+        return "ORB"

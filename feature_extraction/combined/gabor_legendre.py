@@ -8,17 +8,15 @@ from feature_extraction.moments.legendre import Legendre
 
 class GaborLegendre(ExtractionStrategy):
     """
-    Gabor model
+    Gabor-Legendre features
     """
 
     def run(self, image: ndarray) -> ndarray:
         """
-        Run the Gabor model on the image.
-        :param image: The image to run the model on
+        Generate the Gabor-Legendre features of the image.
+        :param image: The image to extract the features from
         :return: The features extracted from the image
         """
-
-        # Filter the image using Gabor filters, then calculate the mean and standard deviation of each filtered image
 
         features = []
         m = Legendre()

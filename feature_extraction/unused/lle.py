@@ -11,17 +11,15 @@ logger = logging.getLogger(__name__)
 
 class LLE(ExtractionStrategy):
     """
-    Zernike Moments model
+    Locally Linear Embedding
     """
 
     def run(self, images: [ndarray]) -> [ndarray]:
         """
         Run locally linear embedding on the images.
-        :param images: The image to run the model on
+        :param images: The images to embed
         :return: The features extracted from the image
         """
-        if images[0].ndim != 2:
-            logger.error(f"Expected images to be 2D, got {images[0].ndim}D. Make sure needs_training is set to True.")
 
         images = np.array([image.flatten() for image in images])
 
@@ -29,4 +27,4 @@ class LLE(ExtractionStrategy):
         return l.fit_transform(images)
 
     def __str__(self):
-        return "Locally Linear Embedding"
+        return "LLE"

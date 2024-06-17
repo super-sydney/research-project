@@ -6,14 +6,14 @@ from feature_extraction.ExtractionStrategy import ExtractionStrategy
 
 class Legendre(ExtractionStrategy):
     """
-    Gabor model
+    Legendre Moments
     """
 
     def run(self, image: ndarray) -> ndarray:
         """
-        Run the Dual Hahn moments on the image.
-        :param image: The image to run the model on
-        :return: The features extracted from the image
+        Generate the Legendre moments of the image.
+        :param image: The image to extract the features from
+        :return: The moments extracted from the image
         """
 
         moments = []
@@ -44,10 +44,10 @@ class Legendre(ExtractionStrategy):
 
     def legendre_polynomial(self, n, x) -> ndarray:
         """
-        Calculate the Chebyshev polynomial of the given order.
+        Calculate the Legendre polynomial of the given order.
         :param n: The order of the polynomial
         :param x: The values to calculate the polynomial for
-        :return: The Chebyshev polynomial
+        :return: The Legendre polynomial
         """
 
         if n == 0:
@@ -61,18 +61,3 @@ class Legendre(ExtractionStrategy):
 
     def __str__(self):
         return "Legendre"
-
-
-if __name__ == "__main__":
-    m = Legendre()
-    x = np.array(np.arange(-1, 1.01, 0.05))
-
-    import matplotlib.pyplot as plt
-
-    n = 6
-    for i in range(0, n):
-        y = (m.legendre_polynomial(i, x))
-        plt.plot(x, y)
-
-    plt.legend([f"n={i}" for i in range(0, n)])
-    plt.show()

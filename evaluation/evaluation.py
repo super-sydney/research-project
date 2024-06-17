@@ -9,7 +9,6 @@ import pickle as pkl
 import time
 
 import cv2
-import numpy as np
 import pandas as pd
 
 from feature_extraction import *
@@ -30,13 +29,14 @@ class Evaluation:
         self.images_path = images_path
         self.similarity = similarity
 
-        # get all images from the folder that have a .jpg, .jpeg extension
+        # get all images from the folder that have a .jpg, .jpeg or .png extension
         self.images = [f for f in os.listdir(images_path) if
-                       f.endswith(".jpg") or f.endswith(".jpeg")]
+                       f.endswith(".jpg") or f.endswith(".jpeg") or f.endswith(".png")]
 
     def load_features(self, save_db=False):
         db_name = os.path.join("database",
                                self.extraction_strategy.__str__() + "." + os.path.split(self.images_path)[-1] + ".pkl")
+        # load features from file if it exists
         if os.path.exists(db_name):
             logger.info(f"Loading features from {db_name}")
             images = pkl.load(open(db_name, "rb"))
@@ -46,6 +46,7 @@ class Evaluation:
             images = []
             t = time.time_ns()
 
+            # extract features from all images
             for i, image in enumerate(self.images):
                 logger.info(f"Loading and extracting features from {image} ({i + 1}/{len(self.images)})")
                 image_path = os.path.join(self.images_path, image)
@@ -62,6 +63,7 @@ class Evaluation:
 
             images.sort(key=lambda x: x[0])
 
+            # save features to file
             if save_db:
                 pkl.dump(images, open(db_name, "wb"))
                 logger.info(f"Saved features to {db_name}")
@@ -102,76 +104,38 @@ class Evaluation:
 
         return precision, recall
 
-    def evaluate(self, visualize=False, save_db=False) -> float:
+    def evaluate(self, save_db=False) -> tuple[float, pd.DataFrame]:
         """
-        Evaluate the model by comparing the features of the images with each other.
+        Evaluate the model by comparing the features of the features with each other.
 
-        For every image, the features are computed using the model and the comparison
-        method is used to make a similarity ranking. The score is calculated based
-        on where in this ranking the images from the same group are.
+        For every image, the features are computed using the extraction strategy.
+        Then, the features are compared with every other image using the similarity method.
+        The similarities are sorted and the ranking is evaluated by checking how many features
+        from the same group are in the top percentage of the ranking. The precision and recall
+        are calculated based on this.
 
         file names are in the format "{group_index}_{image_index}.jpg"
         the first number is the index of the group of watermarks it's
         a part of, the second number is the index within that group.
 
-        :param needs_training: whether the model needs to be trained. This will give all images at once to the model, instead of one by one.
         :param save_db: whether to save the database of features to a file
 
-        :return: the score of the model with the comparison method
+        :return: the mean Average Precision (mAP) and a DataFrame with the results
         """
-        # load all images
-        images = self.load_features(save_db)
-
-        if visualize:
-            # Using locally linear embedding to reduce the dimensionality of the features to just 2d
-            from sklearn.manifold import LocallyLinearEmbedding
-            lle = LocallyLinearEmbedding(n_components=2)
-            features = np.array([f for _, f in images])
-            new_features = lle.fit_transform(features)
-            new_images = images[:18]
-
-            import matplotlib.pyplot as plt
-
-            # Extract group indices from filenames
-            group_indices = np.array([filename.split("_")[0] for filename, _ in new_images], dtype=int)
-
-            # Create a colormap
-            cmap = plt.cm.get_cmap('gnuplot')
-
-            # Plot each point with the corresponding color
-            fig, ax = plt.subplots()
-            for i, (filename, _) in enumerate(new_images):
-                ax.scatter(new_features[i, 0], new_features[i, 1], color=cmap(group_indices[i] / np.max(group_indices)))
-                ax.annotate(filename[:-4], (new_features[i, 0], new_features[i, 1]))
-            fig.savefig(self.extraction_strategy.__str__() + ".png", bbox_inches='tight')
-
-            # Plot a table of the first 9 images and up to 5 features
-            num_features = np.min([5, len(features)])
-            fig, ax = plt.subplots(9, num_features + 1)
-
-            for i, (filename, features) in enumerate(images[:9]):
-                ax[i, 0].imshow(cv2.imread(os.path.join(self.images_path, filename)))
-                ax[i, 0].axis('off')
-
-                for j in range(num_features):
-                    ax[i, j + 1].text(0.5, 0.5, f"{features[j]:.2f}", ha='center', va='center')
-                    ax[i, j + 1].axis('off')
-
-            plt.tight_layout()
-            plt.savefig(self.extraction_strategy.__str__() + "_features.png")
-            plt.show()
+        # load all features
+        features = self.load_features(save_db)
 
         # Collect precision and recall of each group, depending on percentage considered retrieved
         # Also calculate the mean Average Precision (mAP)
         results = []
         mAP = 0
 
-        for i, (filename, features) in enumerate(images):
-            logger.info(f"Comparing features of {filename} ({i + 1}/{len(images)})")
+        for i, (filename, features) in enumerate(features):
+            logger.info(f"Comparing features of {filename} ({i + 1}/{len(features)})")
             # compare features with every other image
             similarities = [
                 (other_filename, self.similarity.compare(features, other_features))
-                for other_filename, other_features in images
+                for other_filename, other_features in features
                 if filename != other_filename
             ]
 
@@ -195,5 +159,5 @@ class Evaluation:
             logger.info(f"Average Precision for {filename}: {AP}")
             mAP += AP
 
-        mAP /= len(images)
+        mAP /= len(features)
         return mAP, pd.DataFrame(results)

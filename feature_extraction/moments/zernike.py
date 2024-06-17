@@ -6,13 +6,13 @@ from feature_extraction.ExtractionStrategy import ExtractionStrategy
 
 class Zernike(ExtractionStrategy):
     """
-    Zernike Moments model
+    Zernike Moments
     """
 
     def run(self, image: ndarray) -> ndarray:
         """
-        Run the Zernike Moments model on the image.
-        :param image: The image to run the model on
+        Generate the Zernike moments of the image.
+        :param image: The image to extract the features from
         :return: The features extracted from the image
         """
         return mh.features.zernike_moments(image, radius=256, degree=10)

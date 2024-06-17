@@ -1,8 +1,6 @@
 """
 Transform the original dataset to have different scaling ,translation and rotation.
 """
-
-import logging
 import os
 
 import cv2
@@ -62,22 +60,19 @@ def shear(image):
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger(__name__)
-
-    logger.info("Starting the transformation")
-
-    # parser = argparse.ArgumentParser(
-    #     description='Transform the original dataset to have different scaling, translation and rotation.')
-    # parser.add_argument('input_folder', type=str, help='Folder containing the original dataset')
-    #
-    # args = parser.parse_args()
     input_folder = "eval_all"
 
     images = [f for f in os.listdir(os.path.join(os.getcwd(), input_folder)) if
               f.endswith(".png") or f.endswith(".jpg")]
 
+    if not os.path.exists(os.path.join(input_folder, "rotated")):
+        os.makedirs(os.path.join(input_folder, "rotated"))
+    if not os.path.exists(os.path.join(input_folder, "sheared")):
+        os.makedirs(os.path.join(input_folder, "sheared"))
+    if not os.path.exists(os.path.join(input_folder, "both")):
+        os.makedirs(os.path.join(input_folder, "both"))
+
     for image in images:
-        logger.info(f"Transforming {image}")
         image_path = os.path.join(input_folder, image)
         img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 

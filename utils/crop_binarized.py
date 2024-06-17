@@ -1,31 +1,14 @@
 """
 Harmonizes binarized images to have the same resolution and scale. Note that this does not harmonize the rotation.
 """
-import argparse
 import os
 
 import cv2
 import numpy as np
 
-
-def get_args():
-    """
-    Parses the arguments
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--input_path", type=str,
-                        default="dataset/386_binarized", help="Path to the input folder of images to be harmonized")
-    parser.add_argument("--output_path", type=str,
-                        default="dataset/386_harmonized", help="Path to the output folder of harmonized images")
-    arguments = parser.parse_args()
-    return arguments
-
-
 if __name__ == "__main__":
-    args = get_args()
-
-    folder_path = args.input_path
-    output_path = args.output_path
+    folder_path = "dataset/386_binarized"
+    output_path = "dataset/386_harmonized"
 
     images = [f for f in os.listdir(folder_path) if os.path.isfile(
         os.path.join(folder_path, f))]
@@ -61,6 +44,8 @@ if __name__ == "__main__":
                                  pad_x - (pad_x // 2),
                                  cv2.BORDER_CONSTANT, value)
 
-        # Save the image to a new folder
+        # Save the image to a new folder. If the folder does not exist, create it.
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
         path = os.path.join(output_path, image)
         cv2.imwrite(path, img)

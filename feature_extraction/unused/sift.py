@@ -7,13 +7,13 @@ from feature_extraction.ExtractionStrategy import ExtractionStrategy
 
 class SIFT(ExtractionStrategy):
     """
-    SIFT model
+    SIFT
     """
 
     def run(self, image: ndarray) -> ndarray:
         """
-        Run the SIFT model on the image
-        :param image: The image to run the model on
+        Generate the SIFT features of the image.
+        :param image: The image to extract the features from
         :return: The features extracted from the image
         """
 

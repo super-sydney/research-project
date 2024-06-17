@@ -2,7 +2,7 @@ import numpy as np
 from numpy import ndarray
 
 from feature_extraction.ExtractionStrategy import ExtractionStrategy
-from feature_extraction.generic_fourier_descriptors.gfd import gfd
+from .generic_fourier_descriptors.gfd import gfd
 
 
 class GenericFourierDescriptor(ExtractionStrategy):

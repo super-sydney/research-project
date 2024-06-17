@@ -10,15 +10,15 @@ logger = logging.getLogger(__name__)
 logging.getLogger().addHandler(logging.StreamHandler())
 if __name__ == "__main__":
     logger.info("Starting the evaluation")
-    ms = [Zernike(), BesselFourier(), Legendre(), Tchebichef(), GaborZernike(), GaborLegendre()]
-    c = Euclidean()
+    feature_extraction_methods = [Zernike(), BesselFourier(), Legendre(), Tchebichef(), GaborZernike(), GaborLegendre()]
+    similarity_measure = Euclidean()
 
-    for m in ms:
-        e = Evaluation(m, c, "dataset/eval_all/both")
+    for method in feature_extraction_methods:
+        e = Evaluation(method, similarity_measure, "dataset/eval_all/rotated")
         mAP, res = e.evaluate(visualize=False, save_db=False)
 
         # Add mAP to the results
         res['mAP'] = mAP
 
-        res.to_csv(f'evaluation/results/{m}Both.csv')
-        logging.info(f'Ran feature extraction {m} with comparison {c} and got mAP {mAP}')
+        # res.to_csv(f'evaluation/results/{method}Both.csv')
+        logging.info(f'Ran feature extraction {method} with comparison {similarity_measure} and got mAP {mAP}')
