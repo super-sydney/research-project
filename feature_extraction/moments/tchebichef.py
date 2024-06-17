@@ -4,7 +4,7 @@ from numpy import ndarray
 from feature_extraction.ExtractionStrategy import ExtractionStrategy
 
 
-class Chebyshev(ExtractionStrategy):
+class Tchebichef(ExtractionStrategy):
     """
     Gabor model
     """
@@ -22,11 +22,11 @@ class Chebyshev(ExtractionStrategy):
         for p in range(1, maxorder):
             for q in range(1, maxorder):
                 if p + q <= maxorder:
-                    moments.append(self.chebyshev_moment(image, p, q))
+                    moments.append(self.tchebichef_moment(image, p, q))
 
         return np.array(moments)
 
-    def chebyshev_moment(self, image: ndarray, p: int, q: int) -> float:
+    def tchebichef_moment(self, image: ndarray, p: int, q: int) -> float:
         """
         Calculate the Chebyshev moment of the image.
         :param image: The image to calculate the moment of
@@ -38,12 +38,12 @@ class Chebyshev(ExtractionStrategy):
         x = np.array(range(rows))
         y = np.array(range(cols))
 
-        T_p = np.array(cols * [self.chebyshev_polynomial(p, x, rows)]).T
-        T_q = np.array(rows * [self.chebyshev_polynomial(q, y, cols)])
+        T_p = np.array(cols * [self.tchebichef_polynomial(p, x, rows)]).T
+        T_q = np.array(rows * [self.tchebichef_polynomial(q, y, cols)])
 
         return np.sum(image * T_p * T_q)
 
-    def chebyshev_polynomial(self, n: int, x: ndarray, N) -> ndarray:
+    def tchebichef_polynomial(self, n: int, x: ndarray, N) -> ndarray:
         """
         Calculate the Chebyshev polynomial of the given order.
         :param n: The order of the polynomial
@@ -56,9 +56,9 @@ class Chebyshev(ExtractionStrategy):
         elif n == 1:
             return (2 * x + 1 - N) / N
         else:
-            t1 = self.chebyshev_polynomial(1, x, N)
-            t_prev = self.chebyshev_polynomial(n - 1, x, N)
-            t_prev_prev = self.chebyshev_polynomial(n - 2, x, N)
+            t1 = self.tchebichef_polynomial(1, x, N)
+            t_prev = self.tchebichef_polynomial(n - 1, x, N)
+            t_prev_prev = self.tchebichef_polynomial(n - 2, x, N)
             t_n = ((2 * n - 1) * t1 * t_prev - (n - 1) * (1 - ((n - 1) * (n - 1)) / (N * N)) * t_prev_prev) / n
             return t_n
 
@@ -67,13 +67,13 @@ class Chebyshev(ExtractionStrategy):
 
 
 if __name__ == "__main__":
-    m = Chebyshev()
+    m = Tchebichef()
     x = np.array(np.arange(100))
 
     import matplotlib.pyplot as plt
 
     for i in range(4, 6):
-        y = (m.chebyshev_polynomial(i, x, len(x)))
+        y = (m.tchebichef_polynomial(i, x, len(x)))
         plt.plot(x, y)
 
     plt.legend([f"n={i}" for i in range(4, 6)])

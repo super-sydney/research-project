@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # parser.add_argument('input_folder', type=str, help='Folder containing the original dataset')
     #
     # args = parser.parse_args()
-    input_folder = "eval_subset"
+    input_folder = "eval_all"
 
     images = [f for f in os.listdir(os.path.join(os.getcwd(), input_folder)) if
               f.endswith(".png") or f.endswith(".jpg")]

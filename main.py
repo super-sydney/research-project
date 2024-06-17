@@ -4,19 +4,21 @@ from evaluation import Evaluation
 from feature_extraction import *
 from similarity import *
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    filename='main.log', filemode='a')
 logger = logging.getLogger(__name__)
-
+logging.getLogger().addHandler(logging.StreamHandler())
 if __name__ == "__main__":
     logger.info("Starting the evaluation")
-    ms = [Zernike(), Legendre(), Chebyshev(), BesselFourier()]
+    ms = [Zernike(), BesselFourier(), Legendre(), Tchebichef(), GaborZernike(), GaborLegendre()]
     c = Euclidean()
 
     for m in ms:
-        e = Evaluation(m, c, "dataset/training_subset/base")
-        score, res = e.evaluate(visualize=False, save_db=False)
-        best_possible_score = e.best_possible_score()
+        e = Evaluation(m, c, "dataset/eval_all/both")
+        mAP, res = e.evaluate(visualize=False, save_db=False)
 
-        res.to_csv(f'evaluation/results/{m}24.csv')
-        # logging.debug(f"Score: {score}, Best possible score: {best_possible_score}")
-        # logging.info(f'Ran feature extraction {m} with comparison {c} and got score {score / best_possible_score}')
+        # Add mAP to the results
+        res['mAP'] = mAP
+
+        res.to_csv(f'evaluation/results/{m}Both.csv')
+        logging.info(f'Ran feature extraction {m} with comparison {c} and got mAP {mAP}')

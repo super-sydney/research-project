@@ -16,7 +16,7 @@ class BesselFourier(ExtractionStrategy):
         :return: The features extracted from the image
         """
 
-        return np.abs(self.bessel_fourier_moment(image, 10)).flatten()
+        return np.abs(self.bessel_fourier_moment(image, 8)).flatten()
 
     def bessel_fourier_moment(self, image: ndarray, maxorder: int) -> float:
         """

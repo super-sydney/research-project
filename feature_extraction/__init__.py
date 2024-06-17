@@ -1,16 +1,11 @@
 from .ExtractionStrategy import ExtractionStrategy
-from .bessel import BesselFourier
-from .chebychev import Chebyshev
-from .gabor import Gabor
-from .generic_fourier_descriptor import GenericFourierDescriptor
-from .hu_moments import HuMoments
-from .lbp_histogram import LBPHistogram
-from .legendre import Legendre
-from .lle import LLE
-from .orb import ORB
-from .sift import SIFT
-from .zernike import Zernike
-from .zernike_moments_matlab import ZernikeMomentsMatlab
+from .combined.gabor_legendre import GaborLegendre
+from .combined.gabor_zernike import GaborZernike
+from .moments.bessel_fourier import BesselFourier
+from .moments.legendre import Legendre
+from .moments.tchebichef import Tchebichef
+from .moments.zernike import Zernike
+from .texture.gabor import Gabor
 
-__all__ = ['ExtractionStrategy', 'SIFT', 'Zernike', 'LLE', 'GenericFourierDescriptor', 'HuMoments', 'ORB',
-           'Gabor', 'LBPHistogram', 'Chebyshev', 'Legendre', 'ZernikeMomentsMatlab', 'BesselFourier']
+__all__ = ['ExtractionStrategy', 'Zernike', 'Gabor', 'GaborLegendre', 'GaborZernike', 'BesselFourier', 'Tchebichef',
+           'Legendre']

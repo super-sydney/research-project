@@ -18,18 +18,6 @@ from similarity import Similarity
 logger = logging.getLogger(__name__)
 
 
-def scoring_function(x):
-    """
-    The scoring function is used to calculate how good a particular ranking place is.
-    The function is such that the score is 1 for first place (x=0), and decreases to 0 until last place (x=1).
-    The sigmoid function is used to make the score decrease slowly at first and faster later on.
-
-    :param x: the position in the ranking, rescaled to be between 0 and 1
-    """
-    # return 2 - (2 / (1 + 2.71828 ** (-10 * x)))
-    return 1 if x < 0.1 else 0
-
-
 class Evaluation:
     def __init__(self, extraction_strategy: ExtractionStrategy, similarity: Similarity, images_path: str):
         """
@@ -82,7 +70,7 @@ class Evaluation:
 
         return images
 
-    def evaluate_ranking(self, similarities, group_index, percentage) -> tuple[float, float]:
+    def evaluate_ranking(self, similarities, group_index, num_retrieved) -> tuple[float, float]:
         """
         Evaluate the ranking of the images from the same group in the similarity ranking.
 
@@ -101,20 +89,15 @@ class Evaluation:
             if filename.split("_")[0] == group_index:
                 group_count += 1
 
-        # calculate the number of images to consider
-        num_images = int(percentage * len(similarities))
-        if num_images == 0:
-            return 0, 0
-
         # count how many images from the same group are in the top percentage of the ranking
         group_in_top = 0
-        for i in range(num_images):
+        for i in range(num_retrieved):
             filename, _ = similarities[i]
             if filename.split("_")[0] == group_index:
                 group_in_top += 1
 
         # calculate precision and recall
-        precision = group_in_top / num_images
+        precision = group_in_top / num_retrieved
         recall = group_in_top / group_count
 
         return precision, recall
@@ -179,8 +162,10 @@ class Evaluation:
             plt.show()
 
         # Collect precision and recall of each group, depending on percentage considered retrieved
+        # Also calculate the mean Average Precision (mAP)
         results = []
-        score = 0
+        mAP = 0
+
         for i, (filename, features) in enumerate(images):
             logger.info(f"Comparing features of {filename} ({i + 1}/{len(images)})")
             # compare features with every other image
@@ -197,49 +182,18 @@ class Evaluation:
 
             group_index, image_index = filename.split("_")
 
-            for i, (filename, _) in enumerate(similarities):
-                # if the image is from the same group, add the score
-                if filename.split("_")[0] == group_index:
-                    score += scoring_function(i / len(similarities))
-
-            for i in np.arange(0.01, 1.01, 0.01):
+            AP = 0
+            prev_recall = 0
+            for i in range(1, len(similarities) + 1):
                 precision, recall = self.evaluate_ranking(similarities, group_index, i)
+                AP += precision * (recall - prev_recall)
                 results.append(
-                    {"group": group_index, "image": image_index, "percentage": i, "precision": precision,
+                    {"group": group_index, "image": image_index, "number_retrieved": i, "precision": precision,
                      "recall": recall,
                      "f1": 2 * precision * recall / (precision + recall) if precision + recall != 0 else 0})
+                prev_recall = recall
+            logger.info(f"Average Precision for {filename}: {AP}")
+            mAP += AP
 
-        return score, pd.DataFrame(results)
-
-    def best_possible_score(self) -> float:
-        """
-        Calculate the best possible score for the model with the comparison method.
-
-        The best possible score is the score that would be achieved if the model
-        was perfect and ranked all of its groups images at the top. This is calculated
-        by checking how many images are in each group, and using the scoring function
-        to calculate the score for the best possible ranking.
-
-        :return: the best possible score for the model with the comparison method
-        """
-        # count how many images are in each group
-        group_counts = {}
-        for image in self.images:
-            group_index = image.split("_")[0]
-            if group_index in group_counts:
-                group_counts[group_index] += 1
-            else:
-                group_counts[group_index] = 1
-
-        # calculate the score based on the group counts.
-        # Every image is compared with every other image in the same group, making for a total of
-        # n rankings of n-1 images. The score is calculated based on the position of the images
-        # from the same group in the ranking.
-        score = 0
-        for count in group_counts.values():
-            best_group_score = 0
-            for i in range(0, count - 1):
-                best_group_score += scoring_function(i / (len(self.images) - 1))
-            score += count * best_group_score
-
-        return score
+        mAP /= len(images)
+        return mAP, pd.DataFrame(results)
