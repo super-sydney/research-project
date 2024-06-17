@@ -7,13 +7,13 @@ from .generic_fourier_descriptors.gfd import gfd
 
 class GenericFourierDescriptor(ExtractionStrategy):
     """
-    Zernike Moments model
+    Generic Fourier Descriptors. Code by Frederik Kratzert.
     """
 
     def run(self, image: ndarray) -> ndarray:
         """
-        Run the Zernike Moments model on the image.
-        :param image: The image to run the model on
+        Extracts the features from the image using the Generic Fourier Descriptors method.
+        :param image: The image to extract the features from
         :return: The features extracted from the image
         """
 
