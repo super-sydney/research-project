@@ -106,11 +106,11 @@ class Evaluation:
 
     def evaluate(self, save_db=False) -> tuple[float, pd.DataFrame]:
         """
-        Evaluate the model by comparing the features of the features with each other.
+        Evaluate the model by comparing the image_features of the image_features with each other.
 
-        For every image, the features are computed using the extraction strategy.
-        Then, the features are compared with every other image using the similarity method.
-        The similarities are sorted and the ranking is evaluated by checking how many features
+        For every image, the image_features are computed using the extraction strategy.
+        Then, the image_features are compared with every other image using the similarity method.
+        The similarities are sorted and the ranking is evaluated by checking how many image_features
         from the same group are in the top percentage of the ranking. The precision and recall
         are calculated based on this.
 
@@ -118,24 +118,24 @@ class Evaluation:
         the first number is the index of the group of watermarks it's
         a part of, the second number is the index within that group.
 
-        :param save_db: whether to save the database of features to a file
+        :param save_db: whether to save the database of image_features to a file
 
         :return: the mean Average Precision (mAP) and a DataFrame with the results
         """
-        # load all features
-        features = self.load_features(save_db)
+        # load all image_features
+        all_features = self.load_features(save_db)
 
         # Collect precision and recall of each group, depending on percentage considered retrieved
         # Also calculate the mean Average Precision (mAP)
         results = []
         mAP = 0
 
-        for i, (filename, features) in enumerate(features):
-            logger.info(f"Comparing features of {filename} ({i + 1}/{len(features)})")
-            # compare features with every other image
+        for i, (filename, image_features) in enumerate(all_features):
+            logger.info(f"Comparing image_features of {filename} ({i + 1}/{len(all_features)})")
+            # compare image_features with every other image
             similarities = [
-                (other_filename, self.similarity.compare(features, other_features))
-                for other_filename, other_features in features
+                (other_filename, self.similarity.compare(image_features, other_features))
+                for other_filename, other_features in all_features
                 if filename != other_filename
             ]
 
@@ -159,5 +159,5 @@ class Evaluation:
             logger.info(f"Average Precision for {filename}: {AP}")
             mAP += AP
 
-        mAP /= len(features)
+        mAP /= len(all_features)
         return mAP, pd.DataFrame(results)
